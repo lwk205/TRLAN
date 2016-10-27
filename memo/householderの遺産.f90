@@ -1,0 +1,318 @@
+SUBROUTINE RESGKL(MATDESCRA,INDXA,PNTRBA,PNTREA,A,M,N,K,L,BK,VK,UK,VPLUS,INFO,ITR,SELEK)
+  IMPLICIT NONE
+
+  INTEGER INDXA(*), PNTRBA(*), PNTREA(*)
+  DOUBLE PRECISION A(*)
+  CHARACTER*6 MATDESCRA
+
+  INTEGER M,N,K,L,I,J,LWORK,IINFO,INFO,ITR,SELEK
+  DOUBLE PRECISION ONE,ZERO,MINUSONE
+  PARAMETER(ONE=1.0D+0,ZERO=0.0D+0,MINUSONE=-1.0D+0)
+  DOUBLE PRECISION NRM,CDUMMY(1,1)
+  DOUBLE PRECISION BK(K,K),CPBK(K,K),VK(N,K),UK(M,K),VPLUS(N),VMTEMP(M),BD(K),BE(K-1)
+  DOUBLE PRECISION VNTEMP(N),UL(K,K),VL(K,K),KK(K,K),KK2(K,K)
+  DOUBLE PRECISION DNRM2,VM(N,K),UM(M,K),HIGE(L),BL(K,K),DLAMCH,WORK2(K*8)
+  DOUBLE PRECISION Q(K,K),P(K,K),TAU(L),TAUP(K),TAUQ(K)
+  DOUBLE PRECISION,ALLOCATABLE :: WORK(:)
+  EXTERNAL CGS2,DLAMCH,DOQDS2,DGEBRD_2
+
+  ! LWORK = 5*K
+  LWORK =MAX(5*K,MAX(M,N),K*K)
+  ALLOCATE (WORK(LWORK))
+  WORK = ONE
+  WORK(1) = ONE+2.0D0*DLAMCH('E')
+  CPBK=BK
+  BL = 0
+  Q=0
+  DO I = 1,K
+     Q(I,I)=1
+  END DO
+  P=Q
+  IF(SELEK==-3) THEN
+     !  WRITE(*,*) "GIVENS回転(DGEBRDG_LP1)+QR法(DBDSQR2)+両側(DGEMM)
+     ! hh reverse ver"
+     Q=0
+     DO I = 1, K
+        Q(I,K-I+1) = 1.0
+     END DO
+     P=Q
+
+     CALL DGEMM('N','N',K,K,K,ONE,BK,K,Q,K,ZERO,KK,K)
+     CALL DGEMM('N','N',K,K,K,ONE,Q,K,KK,K,ZERO,BK,K)
+
+     BK = TRANSPOSE(BK)
+     CALL DGEBRD( K, K, BK, K, BD, BE, TAUQ, TAUP, WORK, LWORK,IINFO )
+     CALL DORMBR( 'Q', 'R', 'N', K, K, K, BK, K, TAUQ, P, K, WORK, LWORK, IINFO )
+     CALL DORMBR( 'P', 'R', 'N', K, K, K, BK, K, TAUP, Q, K, WORK, LWORK, IINFO )
+     DO I = 1,K
+        BD(I)=BK(I,I)
+     END DO
+     DO I = 1,K-1
+        BE(I)=BK(I,I+1)
+     END DO
+     !ここから下を, PとQ,LとU,NとT,を入れ替えると上三角VERにできる。そのほうが精度が悪い
+     P=TRANSPOSE(P)
+     !Q=TRANSPOSE(Q)
+     CALL DBDSQR2( 'L',K,K,K,0,BD,BE,P,K,Q,K,CDUMMY,K,WORK,IINFO )
+     DO I =1 ,L
+        BL(I,I) = BD(I)
+     END DO
+     CALL DGEMM('N','N',M,L,K,ONE,UK,M,Q,K,ZERO,UM,M)
+     CALL DGEMM('N','T',N,L,K,ONE,VK,N,P,K,ZERO,VM,N)
+  ELSE IF(SELEK==-2) THEN
+     !  WRITE(*,*) "GIVENS回転(DGEBRDG_LP1)+QR法(DBDSQR2)+片側(DORMQR)"
+     ! hh reverse ver 
+     Q=0
+     DO I = 1, K
+        Q(I,K-I+1) = 1.0
+     END DO
+     P=Q
+
+     CALL DGEMM('N','N',K,K,K,ONE,BK,K,Q,K,ZERO,KK,K)
+     CALL DGEMM('N','N',K,K,K,ONE,Q,K,KK,K,ZERO,BK,K)
+
+     BK = TRANSPOSE(BK)
+     CALL DGEBRD( K, K, BK, K, BD, BE, TAUQ, TAUP, WORK, LWORK,IINFO )
+     CALL DORMBR( 'Q', 'R', 'N', K, K, K, BK, K, TAUQ, P, K, WORK, LWORK, IINFO )
+
+     DO I = 1,K
+        BD(I)=BK(I,I)
+     END DO
+     DO I = 1,K-1
+        BE(I)=BK(I,I+1)
+     END DO
+
+     P=transpose(p)
+     CALL DBDSQR2('L',K,K,0,0,BD,BE,P,K,Q,K,CDUMMY,K,WORK,IINFO )
+     VL=TRANSPOSE(P)
+     CALL DGEQRF(K,L,VL,K,TAU,WORK,LWORK,IINFO)
+     CALL DORMQR('R','N',K,K,L,VL,K,TAU,CPBK,K,WORK,LWORK,IINFO )
+     CALL DORMQR('R','N',N,K,L,VL,K,TAU,VK,N,WORK,LWORK,IINFO )
+     VM(:,1:L)=VK(:,1:L)
+     CALL DGEQRF(K,L,CPBK,K,TAU,WORK,LWORK,IINFO)
+     CALL DORMQR('R','N',M,K,L,CPBK,K,TAU,UK,M,WORK,LWORK,IINFO )
+     UM(:,1:L)=UK(:,1:L)
+     DO I = 1,L
+        BL(I,I:L)=CPBK(I,I:L)
+     END DO
+  ELSE IF (SELEK == -1) THEN
+     !  WRITE(*,*) "GIVENS回転(DGEBRDG_LP1)+OQDS1法(DOQDS1)+両側(DGEMM)"
+     !の逆転ハウスホールド盤です
+     Q=0
+     DO I = 1, K
+        Q(I,K-I+1) = 1.0
+     END DO
+     P=Q
+
+     CALL DGEMM('N','N',K,K,K,ONE,BK,K,Q,K,ZERO,KK,K)
+     CALL DGEMM('N','N',K,K,K,ONE,Q,K,KK,K,ZERO,BK,K)
+
+     BK = TRANSPOSE(BK)
+     CALL DGEBRD( K, K, BK, K, BD, BE, TAUQ, TAUP, WORK, LWORK,IINFO )
+
+     CALL DORMBR( 'Q', 'R', 'N', K, K, K, BK, K, TAUQ, P, K, WORK, LWORK, IINFO )
+     CALL DORMBR( 'P', 'R', 'N', K, K, K, BK, K, TAUP, Q, K, WORK, LWORK, IINFO )
+     DO I = 1,K
+        BD(I)=BK(I,I)
+     END DO
+     DO I = 1,K-1
+        BE(I)=BK(I,I+1)
+     END DO
+     !ここから下を, PとQ,LとU,NとT,を入れ替えると上三角VERにできる。なぜかそのほうが精度が良い
+     P=TRANSPOSE(P)
+     !Q=TRANSPOSE(Q)
+     CALL DOQDS1('L',K,BD,BE,Q,K,P,K,WORK,WORK2,INFO)
+     DO I =1 ,L
+        BL(I,I) = BD(I)
+     END DO
+     CALL DGEMM('N','N',M,L,K,ONE,UK,M,Q,K,ZERO,UM,M)
+     CALL DGEMM('N','T',N,L,K,ONE,VK,N,P,K,ZERO,VM,N)
+  ELSE IF ( SELEK==0 ) THEN
+     !  WRITE(*,*) "GIVENS回転(DGEBRDG_LP1)+OQDS2法(DOQDS2)+片側(DORMQR)"
+     ! のHOUSEHOLDER 逆転VERです
+     Q=0
+     DO I = 1, K
+        Q(I,K-I+1) = 1.0
+     END DO
+     P=Q
+
+     CALL DGEMM('N','N',K,K,K,ONE,BK,K,Q,K,ZERO,KK,K)
+     CALL DGEMM('N','N',K,K,K,ONE,Q,K,KK,K,ZERO,BK,K)
+
+     BK = TRANSPOSE(BK)
+     CALL DGEBRD( K, K, BK, K, BD, BE, TAUQ, TAUP, WORK, LWORK,IINFO )
+     CALL DORMBR( 'Q', 'R', 'N', K, K, K, BK, K, TAUQ, P, K, WORK, LWORK, IINFO )
+
+     DO I = 1,K
+        BD(I)=BK(I,I)
+     END DO
+     DO I = 1,K-1
+        BE(I)=BK(I,I+1)
+     END DO
+     ! Uオプションなのでまずい。。。
+     CALL DOQDS2('U',K,BD,BE,P,K,WORK,WORK2,INFO)
+     CALL DGEQRF(K,L,P,K,TAU,WORK,LWORK,IINFO)
+     CALL DORMQR('R','N',K,K,L,P,K,TAU,CPBK,K,WORK,LWORK,IINFO )
+     CALL DORMQR('R','N',N,K,L,P,K,TAU,VK,N,WORK,LWORK,IINFO )
+     VM=VK
+     CALL DGEQRF(K,L,CPBK,K,TAU,WORK,LWORK,IINFO)
+     CALL DORMQR('R','N',M,K,L,CPBK,K,TAU,UK,M,WORK,LWORK,IINFO )
+     UM=UK
+     DO I = 1,L
+        BL(I,I:L)=CPBK(I,I:L)
+     END DO
+  ELSE IF(SELEK==1) THEN
+     !  WRITE(*,*) "GIVENS回転(DGEBRDG_LP1)+QR法(DBDSQR2)+両側(DGEMM)"
+     CALL DGEBRDG_4_BISIDE(L+1,BK,K,Q,P)
+
+     DO I = 1,K
+        BD(I)=BK(I,I)
+     END DO
+     DO I = 1,K-1
+        BE(I)=BK(I,I+1)
+     END DO
+     CALL DBDSQR2( 'U',K,K,K,0,BD,BE,P,K,Q,K,CDUMMY,K,WORK,IINFO )
+     DO I =1 ,L
+        BL(I,I) = BD(I)
+     END DO
+     CALL DGEMM('N','N',M,L,K,ONE,UK,M,Q,K,ZERO,UM,M)
+     CALL DGEMM('N','T',N,L,K,ONE,VK,N,P,K,ZERO,VM,N)
+  ELSE IF(SELEK==2) THEN
+     !  WRITE(*,*) "GIVENS回転(DGEBRDG_LP1)+QR法(DBDSQR2)+片側(DORMQR)"
+
+     CALL DGEBRDG_LP1(L+1,BK,K,Q,P)
+
+     DO I = 1,K
+        BD(I)=BK(I,I)
+     END DO
+
+     DO I = 1,K-1
+        BE(I)=BK(I,I+1)
+     END DO
+
+     CALL DBDSQR2('U',K,K,0,0,BD,BE,P,K,Q,K,CDUMMY,K,WORK,IINFO )
+     VL=TRANSPOSE(P)
+     CALL DGEQRF(K,L,VL,K,TAU,WORK,LWORK,IINFO)
+     CALL DORMQR('R','N',K,K,L,VL,K,TAU,CPBK,K,WORK,LWORK,IINFO )
+     CALL DORMQR('R','N',N,K,L,VL,K,TAU,VK,N,WORK,LWORK,IINFO )
+     VM(:,1:L)=VK(:,1:L)
+     CALL DGEQRF(K,L,CPBK,K,TAU,WORK,LWORK,IINFO)
+     CALL DORMQR('R','N',M,K,L,CPBK,K,TAU,UK,M,WORK,LWORK,IINFO )
+     UM(:,1:L)=UK(:,1:L)
+     DO I = 1,L
+        BL(I,I:L)=CPBK(I,I:L)
+     END DO
+  ELSE IF ( SELEK==6) THEN
+     ! そもそも、初回はDGEBRDする必要がない
+     ! 下のELSEから始まるものと比較して、ロバスト性が高くなってる。
+
+     !  WRITE(*,*) "ヤコビ法(DGESVJ2)+片側(DORMQR)"
+     I=M
+     CALL DGESVJ2('U','C','V',K,K,BK,K,VNTEMP,I,VL,K,WORK,LWORK,IINFO)
+     CALL DGEQRF(K,L,VL,K,TAU,WORK,LWORK,IINFO)
+     CALL DORMQR('R','N',K,K,L,VL,K,TAU,CPBK,K,WORK,LWORK,IINFO )
+     CALL DORMQR('R','N',N,K,L,VL,K,TAU,VK,N,WORK,LWORK,IINFO )
+     VM=VK
+     CALL DGEQRF(K,L,CPBK,K,TAU,WORK,LWORK,IINFO)
+     CALL DORMQR('R','N',M,K,L,CPBK,K,TAU,UK,M,WORK,LWORK,IINFO )
+     UM=UK
+     DO I = 1,L
+        BL(I,I:L)=CPBK(I,I:L)
+     END DO
+
+  ELSE IF (SELEK==5) THEN
+     !  WRITE(*,*) "ヤコビ法(DGESVJ2)+両側(DGEMM)"
+     I=M
+     CALL DGESVJ2('U','C','V',K,K,BK,K,VNTEMP,I,VL,K,WORK,LWORK,IINFO)
+     IF ( NINT(WORK(2)) .LT. L ) THEN
+        INFO = 2
+        RETURN
+     END IF
+     DO I =1 ,L
+        BL(I,I) = VNTEMP(I)
+     END DO
+     CALL DGEMM('N','N',N,L,K,ONE,VK,N,VL,K,ZERO,VM,N)
+     CALL DGEMM('N','N',M,L,K,ONE,UK,M,BK,K,ZERO,UM,M)
+  ELSE IF(SELEK==4) THEN
+     !  WRITE(*,*) "GIVENS回転(DGEBRDG_LP1)+OQDS2法(DOQDS2)+片側(DORMQR)"
+
+     CALL DGEBRDG_LP1(L+1,BK,K,Q,P) ! OUT PUT P IS TRANSPOSED
+
+     DO I = 1,K
+        BD(I)=BK(I,I)
+     END DO
+
+     DO I = 1,K-1
+        BE(I)=BK(I,I+1)
+     END DO
+
+     P=TRANSPOSE(P)
+     CALL DOQDS2('L',K,BD,BE,P,K,WORK,WORK2,INFO)
+     CALL DGEQRF(K,L,P,K,TAU,WORK,LWORK,IINFO)
+     CALL DORMQR('R','N',K,K,L,P,K,TAU,CPBK,K,WORK,LWORK,IINFO )
+     CALL DORMQR('R','N',N,K,L,P,K,TAU,VK,N,WORK,LWORK,IINFO )
+     VM=VK
+     CALL DGEQRF(K,L,CPBK,K,TAU,WORK,LWORK,IINFO)
+     CALL DORMQR('R','N',M,K,L,CPBK,K,TAU,UK,M,WORK,LWORK,IINFO )
+     UM=UK
+     DO I = 1,L
+        BL(I,I:L)=CPBK(I,I:L)
+     END DO
+  ELSE IF(SELEK==3) THEN
+     !  WRITE(*,*) "GIVENS回転(DGEBRDG_LP1)+OQDS1法(DOQDS1)+両側(DGEMM)"
+
+     CALL DGEBRDG_4_BISIDE(L+1,BK,K,Q,P)
+     P=TRANSPOSE(P)
+     Q=TRANSPOSE(Q)
+     DO I = 1,K
+        BD(I)=BK(I,I)
+     END DO
+     DO I = 1,K-1
+        BE(I)=BK(I,I+1)
+     END DO
+     !   WRITE(*,*)"HELLO"
+     CALL DOQDS1('L',K,BD,BE,P,K,Q,K,WORK,WORK2,INFO)
+     DO I =1 ,L
+        BL(I,I) = BD(I)
+     END DO
+     CALL DGEMM('N','T',M,L,K,ONE,UK,M,Q,K,ZERO,UM,M)
+     CALL DGEMM('N','N',N,L,K,ONE,VK,N,P,K,ZERO,VM,N)
+  END IF
+
+  CALL MKL_DCSRMV( 'N', M, N, ONE, MATDESCRA, A, INDXA, &
+       PNTRBA,PNTREA, VPLUS(1), ZERO, VMTEMP(1))
+  ! CALL DGEMV('N',M,N,ONE,A,M,VPLUS,1,ZERO,VMTEMP,1)
+  CALL DGEMV('T',M,L,ONE,UM,M,VMTEMP,1,ZERO,HIGE,1)
+
+  BL(1: L,L+1) = HIGE
+  VM(: ,L+1) = VPLUS
+  J = L
+  DO WHILE(J < K)
+     !  CALL DGEMV('N',M,N,ONE,A,M,VM(:,J+1),1,ZERO,VMTEMP,1)
+     CALL MKL_DCSRMV( 'N', M, N, ONE, MATDESCRA, A, INDXA, &
+          PNTRBA,PNTREA, VM(:,J+1), ZERO, VMTEMP(1))
+     CALL CGS2(VMTEMP,UM,M,K,J)
+     NRM = DNRM2(M,VMTEMP,1)
+     VMTEMP = VMTEMP / NRM
+     BL(J+1,J+1) = NRM
+     UM(:,J+1) = VMTEMP
+
+     !  CALL DGEMV('T',M,N,ONE,A,M,UM(:,J+1),1,ZERO,VNTEMP,1)
+     CALL MKL_DCSRMV( 'T', M, N, ONE, MATDESCRA, A, INDXA, &
+          PNTRBA,PNTREA, UM(:,J+1), ZERO, VNTEMP(1))
+     CALL CGS2(VNTEMP,VM,N,K,J+1)
+     NRM = DNRM2(N,VNTEMP,1)
+     VNTEMP = VNTEMP / NRM
+     IF(J < K - 1) THEN
+        BL(J+1,J+2) = NRM
+        VM(: ,J+2) = VNTEMP
+     END IF
+     J = J+1
+  END DO
+  VPLUS = VNTEMP
+  BK = BL
+  VK = VM
+  UK = UM
+
+  RETURN
+END SUBROUTINE RESGKL

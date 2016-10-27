@@ -1,0 +1,76 @@
+include Makefile.inc 
+
+# makefile
+all:	 dlasru.o dbdsqru.o CGS2.o  DGEBRDG_4_BISIDE.o  DGEBRDG_K.o  DGEBRDG_LP1.o  ERR.o  GKL.o RESGKL.o doqds1.o doqds2.o dlartg2.o dlartg3.o dlartg4.o dlartg5.o dlartg6.o dlartg7.o dfma0.o dbdsqr2.o dgesvj2.o RESGKL_MAIN.o fileinput_gkl
+
+dlasru.o:
+	${FC} ${FCFLAG} -c -o lib/dlasru.o lib/dlasru.f
+
+dbdsqru.o:
+	${FC} ${FCFLAG} -c -o lib/dbdsqru.o lib/dbdsqru.f
+
+CGS2.o:
+	${FC} ${FCFLAG} -c -o src/CGS2.o  src/CGS2.f90 ${LIB}
+
+DGEBRDG_4_BISIDE.o:
+	${FC} ${FCFLAG} -c -o  src/DGEBRDG_4_BISIDE.o  src/DGEBRDG_4_BISIDE.f90 ${LIB}
+
+DGEBRDG_K.o:
+	${FC} ${FCFLAG} -c -o src/DGEBRDG_K.o src/DGEBRDG_K.f90 ${LIB}
+
+DGEBRDG_LP1.o:
+	${FC} ${FCFLAG} -c -o src/DGEBRDG_LP1.o src/DGEBRDG_LP1.f90 ${LIB}
+
+ERR.o:
+	${FC} ${FCFLAG} -c -o src/ERR.o src/ERR.f90 ${LIB}
+
+GKL.o:
+	${FC} ${FCFLAG} -c -o src/GKL.o src/GKL.f90 ${LIB}
+
+RESGKL.o:
+	${FC} ${FCFLAG} -c -o src/RESGKL.o src/RESGKL.f90 ${LIB}
+
+dbdsqr2.o:
+	${FC} ${FCFLAG} -c -o lib/dbdsqr2.o lib/dbdsqr2.f
+
+dgesvj2.o:
+	${FC} ${FCFLAG} -c -o lib/dgesvj2.o lib/dgesvj2.f
+
+doqds1.o:
+	${FC} ${FCFLAG} -c -o lib/doqds1.o lib/doqds1.f
+
+doqds2.o:
+	${FC} ${FCFLAG} -c -o lib/doqds2.o lib/doqds2.f
+
+dlartg2.o:
+	${FC} ${FCFLAG} -c -o lib/dlartg2.o lib/dlartg2.f
+
+dlartg2.o:
+	${FC} ${FCFLAG} -c -o lib/dlartg2.o lib/dlartg2.f
+
+dlartg5.o:
+	${FC} ${FCFLAG} -c -o lib/dlartg5.o lib/dlartg5.f
+
+dlartg6.o:
+	${FC} ${FCFLAG} -c -o lib/dlartg6.o lib/dlartg6.f
+dlartg3.o:
+	${FC} ${FCFLAG} -c -o lib/dlartg3.o lib/dlartg3.f
+
+dlartg4.o:
+	${FC} ${FCFLAG} -c -o lib/dlartg4.o lib/dlartg4.f
+
+
+dlartg7.o:
+	${FC} -O2 -fp-model precise -c -o lib/dlartg7.o lib/dlartg7.f
+
+dfma0.o:
+	${CC} ${CCFLAG} -c -o lib/dfma0.o lib/dfma0.c
+
+RESGKL_MAIN.o:
+	${FC} ${FCFLAG} -c -o src/RESGKL_MAIN.o src/RESGKL_MAIN.f90 ${LIB}
+
+fileinput_gkl:
+	${CC} ${CCFLAG} -std=c99 -o fileinput_gkl fileinput_gkl.c lib/dlasru.o lib/dbdsqru.o src/CGS2.o  src/DGEBRDG_4_BISIDE.o  src/DGEBRDG_K.o  src/DGEBRDG_LP1.o  src/ERR.o  src/GKL.o src/RESGKL.o lib/doqds1.o lib/doqds2.o lib/dlartg2.o lib/dlartg3.o lib/dlartg4.o lib/dlartg5.o lib/dlartg6.o lib/dlartg7.o lib/dfma0.o lib/dbdsqr2.o lib/dgesvj2.o src/RESGKL_MAIN.o ${LIB}
+
+clean:
+	rm -rf *.o fileinput_gkl

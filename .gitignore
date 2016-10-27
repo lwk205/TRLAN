@@ -1,0 +1,16 @@
+*.o*
+*.e*
+*.out
+*.txt
+*.swp
+*.csv
+*~
+fileinput_gkl
+sparse_nonsymm
+dense_nonsymm
+power
+bidiag
+*pycache*
+dammy*
+data*
+jj*

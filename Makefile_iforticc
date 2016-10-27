@@ -1,0 +1,37 @@
+DRV=./Driver
+TriEVD=./srcTriEVD
+RGKL=srcRGKL
+MKMAT=SVD_MKMAT
+
+FC=ifort
+CC=icc
+ifdef debug
+CCFLAG=-Wall -g -mcmodel=medium -shared-intel -Wall
+FCFLAG=-warn all -CB -traceback -g -mcmodel=medium -shared-intel 
+else
+CCFLAG=-fp-model precise -O3 -ipo -xHOST -mcmodel=medium -shared-intel -Wall
+FCFLAG=-fp-model precise -O3 -ipo -xHOST -mcmodel=medium -shared-intel
+endif
+
+FLAG2=${LIB}
+LIB=-mkl -L/opt/intel/lib/intel64 -lifcore -lifcore_pic -lifcoremt -lifport -lchkpwrap -qopenmp
+
+all:	 dlasru.o dbdsqru.o CGS2.o  DGEBRDG_4_BISIDE.o  DGEBRDG_K.o  DGEBRDG_LP1.o  ERR.o  GKL.o RESGKL.o doqds1.o doqds2.o dlartg2.o dlartg3.o dlartg4.o dlartg5.o dlartg6.o dlartg7.o dfma0.o RESGKL_MAIN.o fileinput_gkl
+
+%.o: lib/%.f
+	${FC} ${FCFLAG} -c -o lib/$@ $<
+
+%.o: src/%.f90
+	${FC} ${FCFLAG} -c -o src/$@ $< ${LIB}
+
+dlartg7.o:
+	${FC} -O2 -fp-model precise -c -o lib/dlartg7.o lib/dlartg7.f
+
+dfma0.o:
+	${CC} ${CCFLAG} -c -o lib/dfma0.o lib/dfma0.c
+
+fileinput_gkl:
+	${CC} ${CCFLAG} -std=c99 -o fileinput_gkl fileinput_gkl.c lib/dlasru.o lib/dbdsqru.o src/CGS2.o  src/DGEBRDG_4_BISIDE.o  src/DGEBRDG_K.o  src/DGEBRDG_LP1.o  src/ERR.o  src/GKL.o src/RESGKL.o lib/doqds1.o lib/doqds2.o lib/dlartg2.o lib/dlartg3.o lib/dlartg4.o lib/dlartg5.o lib/dlartg6.o lib/dlartg7.o lib/dfma0.o src/RESGKL_MAIN.o ${LIB}
+
+clean:
+	rm -rf src/*.o lib/*.o fileinput_gkl

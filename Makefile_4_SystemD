@@ -3,19 +3,19 @@ LIB2= -Wl,--start-group /opt/intel/mkl/lib/intel64/libmkl_intel_lp64.a /opt/inte
 all: clean dbdsqru.o CGS2.o DGEBRDG_4_BISIDE.o DGEBRDG_LP1.o ERR.o RESGKL.o doqds1.o doqds3.o dlartg6.o dlartg7.o dfma0.o RESGKL_MAIN.o fileinput_gkl
 
 %.o: src/%.f90
-	/home/a/a0082042/GCC_610/bin/gfortran -Wall -mcmodel=medium -fopenmp -O3 -mtune=haswell -march=haswell -c -o src/$@ $<
+	/home/a/a0122960/GCC_620/bin/gfortran -Wall -mcmodel=medium -fopenmp -O3 -mtune=haswell -march=haswell -c -o src/$@ $<
 
 %.o: lib/%.f
-	/home/a/a0082042/GCC_610/bin/gfortran -fopenmp -mcmodel=medium -O3 -mtune=haswell -march=haswell -c -o lib/$@ $<
+	/home/a/a0122960/GCC_620/bin/gfortran -fopenmp -mcmodel=medium -O3 -mtune=haswell -march=haswell -c -o lib/$@ $<
 
 dlartg7.o:
-	/home/a/a0082042/GCC_610/bin/gfortran -fopenmp -mcmodel=medium -O2 -c -o lib/dlartg7.o lib/dlartg7.f
+	/home/a/a0122960/GCC_620/bin/gfortran -fopenmp -mcmodel=medium -O2 -c -o lib/dlartg7.o lib/dlartg7.f
 
 dfma0.o:
-	/home/a/a0082042/GCC_610/bin/gcc -O3 -fopenmp -mtune=haswell -march=haswell -mcmodel=medium -c -o lib/dfma0.o lib/dfma0.c
+	/home/a/a0122960/GCC_620/bin/gcc -O3 -fopenmp -mtune=haswell -march=haswell -mcmodel=medium -c -o lib/dfma0.o lib/dfma0.c
 
 fileinput_gkl:
-	/home/a/a0082042/GCC_610/bin/gcc -O3 -fopenmp -mtune=haswell -march=haswell -mcmodel=medium -std=c99 -o fileinput_gkl fileinput_gkl.c lib/dbdsqru.o src/CGS2.o src/DGEBRDG_4_BISIDE.o src/DGEBRDG_LP1.o src/ERR.o src/RESGKL.o lib/doqds1.o lib/doqds3.o lib/dlartg6.o lib/dlartg7.o lib/dfma0.o src/RESGKL_MAIN.o ${LIB2}
+	/home/a/a0122960/GCC_620/bin/gcc -O3 -fopenmp -mtune=haswell -march=haswell -mcmodel=medium -std=c99 -o fileinput_gkl fileinput_gkl.c lib/dbdsqru.o src/CGS2.o src/DGEBRDG_4_BISIDE.o src/DGEBRDG_LP1.o src/ERR.o src/RESGKL.o lib/doqds1.o lib/doqds3.o lib/dlartg6.o lib/dlartg7.o lib/dfma0.o src/RESGKL_MAIN.o ${LIB2}
 
 clean:
 	rm -rf lib/*.o src/*.o fileinput_gkl

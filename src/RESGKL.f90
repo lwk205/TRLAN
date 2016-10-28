@@ -17,16 +17,16 @@ SUBROUTINE RESGKL(J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WORK,LWORK)
   Q(1:N,J) = P_PLUS(1:N)
   DO WHILE(J < M+1)
      CALL av(N,IAP,JA,A, Q(1:N,J), P)
+     CALL CGS2(P,Q,N,J-2,WORK)
      ALPHA = DDOT(N,P,1,Q(1:N,J),1)
      TM(J,J) = ALPHA
      IF (J .NE. 1) THEN
-        P = P - TM(J-1,J) * Q(1:N,J-1) 
+        CALL DAXPY(N,-TM(J-1,J),Q(1:N,J-1),1,P,1) 
      END IF
-     P = P - TM(J,J) * Q(1:N,J) 
+     CALL DAXPY(N,-TM(J,J),Q(1:N,J),1,P,1)
      BETA=DNRM2(N,P,1)
      IF(J < M) THEN
         TM(J,J+1)=BETA
-        TM(J+1,J)=BETA
         Q(1:N,J+1)=P/BETA
      ELSE
         P_PLUS(1:N) = P / BETA
@@ -52,20 +52,16 @@ SUBROUTINE RESGKL(J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WORK,LWORK)
         TM(I,I) = BD(I)
      END DO
      CALL DAXPY(K,BETA,Y(M,1),M,TM(1,K+1),1)
-     CALL DAXPY(K,BETA,Y(M,1),M,TM(K+1,1),M)
   END IF
 
   Q(1:N,J) = P_PLUS(1:N)
   CALL av(N,IAP,JA,A, Q(1:N,J), P)
   ALPHA = DDOT(N,P,1,Q(1:N,J),1)
   TM(J,J) = ALPHA
-  do I=1,K
-     P = P - BETA * Y(M,I)*Q(1:N,I)
-  END DO
-  P = P - TM(J,J) * Q(1:N,J) 
+  CALL DGEMV('N',N,K,-BETA,Q(1,1),N,Y(M,1),M,ONE,P,1)
+  CALL DAXPY(N,-TM(J,J),Q(1:N,J),1,P,1)
   BETA=DNRM2(N,P,1)
   TM(J,J+1)=BETA
-  TM(J+1,J)=BETA
   P_PLUS(1:N)=P/BETA
   J=J+1
 

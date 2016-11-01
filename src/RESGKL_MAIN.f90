@@ -24,8 +24,7 @@ SUBROUTINE RESGKL_MAIN(MODE,ACCURACY,N,K,M,IAP,JA,A,WORK,LWORK)
   DO W = 1,1
      CALL DLARNV(1,ISEED,N,INIT_VEC)
      INIT_VEC = INIT_VEC / DNRM2(N,INIT_VEC,1)
-
-     DO SELEK = 1, 1!, 2
+     DO SELEK = 1, 2!, 2
         STARTT = omp_get_wtime()
         WRITE(*,*) 
         TM = ZERO

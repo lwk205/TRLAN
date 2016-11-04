@@ -8,6 +8,7 @@ SUBROUTINE DGEBRDG_4_TRISIDE(N,A,LDA,P)
   IF ( n .LE. 2 ) THEN
      RETURN
   END IF
+     !write(*,*) a(1:LDA,1:LDA)
 
   DO i = 1, N-2
      CALL DLARTG( a(i+1,N), a(i,N), CS, SN,a(i+1,N))
@@ -43,6 +44,7 @@ SUBROUTINE DGEBRDG_4_TRISIDE(N,A,LDA,P)
            END IF
         END DO
      END IF
+     !write(*,*) a(1:LDA,1:LDA)
   END DO
   
   RETURN

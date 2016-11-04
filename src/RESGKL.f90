@@ -9,9 +9,9 @@ SUBROUTINE RESGKL(J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WORK,LWORK)
   DOUBLE PRECISION ONE,ZERO,TWO,MINUSONE
   PARAMETER(ONE=1.0D+0,ZERO=0.0D+0,TWO=2.0D+0,MINUSONE=-1.0D+0)
   DOUBLE PRECISION CDUMMY(1,1),ALPHA,BETA
-  DOUBLE PRECISION TM(M,M),TMP_M_M(M,M),Q(N,M),P_PLUS(N),BD(M),BE(M)
+  DOUBLE PRECISION TM(M,M),TPP(M,M),TMP_M_M(M,M),Q(N,M),QQ(N,M),P_PLUS(N),BD(M),BE(M)
   DOUBLE PRECISION TMP_N_K(N,K),WORK2(M*8)
-  DOUBLE PRECISION Y(M,M),P(N)
+  DOUBLE PRECISION z(m,m),Y(M,M),P(N)
   DOUBLE PRECISION DDOT,DNRM2,DLAMCH
 
   Q(1:N,J) = P_PLUS(1:N)
@@ -42,13 +42,13 @@ SUBROUTINE RESGKL(J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WORK,LWORK)
      Y(I,I) = ONE
   END DO
 
+     write(*,*) TM 
   IF (SELEK == 2) THEN
-  write(*,*) "DSYEV ver"
+!  write(*,*) "DSYEV ver"
      CALL DSYEV("V", "U", M, TM, M, BD, WORK, LWORK, INFO )
      Y=TM
      CALL DGEMM('N','N',N,K,M,ONE,Q,N,Y,M,ZERO,TMP_N_K,N)
      CALL DCOPY(N*K,TMP_N_K,1,Q,1)
-
      TM = ZERO
      DO I =1 ,K
         TM(I,I) = BD(I)
@@ -57,56 +57,56 @@ SUBROUTINE RESGKL(J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WORK,LWORK)
   END IF
 
   IF (SELEK == 1) THEN
-  write(*,*) "DGEBRDG_4_TRISIDE + DSTEQR ver"
-     CALL DGEBRDG_4_TRISIDE(K+1,TM,M,Y)
-     !tridiagonalizeされる前のTM == Y * された後のTM * Y^T
-     DO I =1 ,M
-        BD(I)=TM(I,I)
-     END DO
-     DO I =1 ,M-1
-        BE(I)=TM(I,I+1)
-     END DO
-     CALL DSTEQR("V",M,BD,BE,Y,M,WORK,INFO) !これでよい？
+!  write(*,*) "katagawrisuta-to ver"
+     CALL DCOPY(M*M,TM,1,TMP_M_M,1)
+     CALL DSYEV("V", "U", M, TM, M, BE, WORK, LWORK, INFO )
+     Y=TM
+     CALL DGEQRF(M,K,Y,M,BD,WORK,LWORK,INFO)
+     z=y
+     call DORGQR(M,K,K,Y,M,BD,WORK,LWORK,INFO)
+write(*,*) "Y-TM", Y 
+write(*,*) "Y-TM" 
+write(*,*) "Y-TM", TM 
+write(*,*) "Y-TM" 
+     !call DGEMM('N','N',n,k,m,ONE,Q,n,Y,M,ZERO,QQ,n)
+     !q=qq
      CALL DGEMM('N','N',N,K,M,ONE,Q,N,Y,M,ZERO,TMP_N_K,N)
      CALL DCOPY(N*K,TMP_N_K,1,Q,1)
-
+     call DGEMM('N','N',m,k,m,ONE,tmp_m_m,M,Y,M,ZERO,TPP,M)
+!     call DGEMM('T','N',k,k,m,ONE,Y,M,TPP,M,ZERO,TMP_M_M,M)
+     
+     !計算テスト
+     !CALL DORMQR('R','N',N,M,K,Y,M,BD,Q,N,WORK,LWORK,INFO )
+     !CALL DORMQR('R','N',M,M,K,Y,M,BD,TMP_M_M,M,WORK,LWORK,INFO )
+     !CALL DORMQR('L','T',M,K,K,Y,M,BD,TMP_M_M,M,WORK,LWORK,INFO )
+     !TM = ZERO
+     !DO I = 1,K
+     !   !write(*,*) TMP_M_M(1:K,I)
+     !   CALL DCOPY(K,TMP_M_M(1,I),1,TM(1,I),1)
+     !END DO
      TM = ZERO
      DO I =1 ,K
-        TM(I,I) = BD(I)
+        write(*,*) "testtt",tpp(1:m,i) - be(i)*Y(1:m,i)
+        write(*,*) TMP_M_M(I,I)
+        TM(I,I) = BE(I)
      END DO
+     !BE(1:M) = ZERO
+     !BE(M) = ONE
+     !CALL DORMQR('R','N',1,M,K,z,M,BD,BE,1,WORK,LWORK,INFO ) 
+     !CALL DAXPY(K,BETA,BE,1,TM(1,K+1),1)
      CALL DAXPY(K,BETA,Y(M,1),M,TM(1,K+1),1)
-     CALL DAXPY(K,BETA,Y(M,1),M,TM(K+1,1),M)
   END IF
 
-
-  IF (SELEK == 3) THEN
-     write(*,*) "DGEBRDG_4_TRISIDE + DSTEQR (転地合成考慮版) ver"
-     CALL DGEBRDG_4_TRISIDE(K+1,TM,M,Y)
-     !tridiagonalizeされる前のTM == Y * された後のTM * Y^T
-     DO I =1 ,M
-        BD(I)=TM(I,I)
-     END DO
-     DO I =1 ,M-1
-        BE(I)=(TM(I,I+1)+TM(I+1,I))/2.0
-        !write(*,*) TM(I,I+1)-TM(I+1,I)
-     END DO
-     !write(*,*) TM
-     CALL DSTEQR("V",M,BD,BE,Y,M,WORK,INFO) !これでよい？
-     CALL DGEMM('N','N',N,K,M,ONE,Q,N,Y,M,ZERO,TMP_N_K,N)
-     CALL DCOPY(N*K,TMP_N_K,1,Q,1)
-
-     TM = ZERO
-     DO I =1 ,K
-        TM(I,I) = BD(I)
-     END DO
-     CALL DAXPY(K,BETA,Y(M,1),M,TM(1,K+1),1)
-     CALL DAXPY(K,BETA,Y(M,1),M,TM(K+1,1),M)
-  END IF
   Q(1:N,J) = P_PLUS(1:N)
   CALL av(N,IAP,JA,A, Q(1:N,J), P)
   ALPHA = DDOT(N,P,1,Q(1:N,J),1)
   TM(J,J) = ALPHA
-  CALL DGEMV('N',N,K,-BETA,Q(1,1),N,Y(M,1),M,ONE,P,1)
+  IF (SELEK == 2) THEN
+    CALL DGEMV('N',N,K,-BETA,Q(1,1),N,Y(M,1),M,ONE,P,1)
+  else if (SELEK == 1) THEN
+    CALL DGEMV('N',N,K,-BETA,Q(1,1),N,Y(M,1),M,ONE,P,1)
+    !CALL DGEMV('N',N,K,-BETA,Q(1,1),N,be,1,ONE,P,1)
+  end if
   CALL DAXPY(N,-TM(J,J),Q(1:N,J),1,P,1)
   BETA=DNRM2(N,P,1)
   TM(J,J+1)=BETA
@@ -114,6 +114,7 @@ SUBROUTINE RESGKL(J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WORK,LWORK)
   P_PLUS(1:N)=P/BETA
   J=J+1
 
+     write(*,*) TM 
   RETURN
 END SUBROUTINE RESGKL
 

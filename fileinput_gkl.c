@@ -37,9 +37,9 @@ int main(int argc, char *argv[]){
   A=(double *)malloc(sizeof(double)*w);
 
   lwork=5*K;
-  if (m>lwork) lwork=m;
-  if (n>lwork) lwork=n;
-  if (K*K>lwork) lwork=K*K;
+  if (m>lwork) lwork=10*m;
+  if (n>lwork) lwork=10*n;
+  if (K*K>lwork) lwork=10*K*K;
 
   work=(double *)malloc(sizeof(double)*lwork);
 

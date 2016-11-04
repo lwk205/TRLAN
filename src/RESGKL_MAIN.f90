@@ -24,7 +24,7 @@ SUBROUTINE RESGKL_MAIN(MODE,ACCURACY,N,K,M,IAP,JA,A,WORK,LWORK)
   DO W = 1,1
      CALL DLARNV(1,ISEED,N,INIT_VEC)
      INIT_VEC = INIT_VEC / DNRM2(N,INIT_VEC,1)
-     DO SELEK = 1, 3!, 2
+     DO SELEK = 1, 2!, 2
         STARTT = omp_get_wtime()
         WRITE(*,*) 
         TM = ZERO
@@ -34,7 +34,7 @@ SUBROUTINE RESGKL_MAIN(MODE,ACCURACY,N,K,M,IAP,JA,A,WORK,LWORK)
         ITR = 0
         I = 1
         VPLUS = INIT_VEC
-        DO WHILE (COU < 1000)
+        DO WHILE (COU < 10)
            CALL RESGKL(I,mode,IAP,JA,A,N,M,K,TM,VM,VPLUS,INFO,SELEK,WORK,LWORK)
            TMP_ERR = MAXVAL(ABS(TM(1:K,K+1)))
 

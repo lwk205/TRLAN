@@ -16,6 +16,7 @@ SUBROUTINE RESGKL(J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WORK,LWORK)
 
   Q(1:N,J) = P_PLUS(1:N)
   DO WHILE(J < M+1)
+!     write(*,*)TM
      CALL av(N,IAP,JA,A, Q(1:N,J), P)
      CALL CGS2(P,Q,N,J-2,WORK)  !J=-1のとき,MKLがエラーを吐く
      ALPHA = DDOT(N,P,1,Q(1:N,J),1)
@@ -77,6 +78,30 @@ SUBROUTINE RESGKL(J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WORK,LWORK)
      CALL DAXPY(K,BETA,Y(M,1),M,TM(K+1,1),M)
   END IF
 
+
+  IF (SELEK == 3) THEN
+     write(*,*) "DGEBRDG_4_TRISIDE + DSTEQR (転地合成考慮版) ver"
+     CALL DGEBRDG_4_TRISIDE(K+1,TM,M,Y)
+     !tridiagonalizeされる前のTM == Y * された後のTM * Y^T
+     DO I =1 ,M
+        BD(I)=TM(I,I)
+     END DO
+     DO I =1 ,M-1
+        BE(I)=(TM(I,I+1)+TM(I+1,I))/2.0
+        !write(*,*) TM(I,I+1)-TM(I+1,I)
+     END DO
+     !write(*,*) TM
+     CALL DSTEQR("V",M,BD,BE,Y,M,WORK,INFO) !これでよい？
+     CALL DGEMM('N','N',N,K,M,ONE,Q,N,Y,M,ZERO,TMP_N_K,N)
+     CALL DCOPY(N*K,TMP_N_K,1,Q,1)
+
+     TM = ZERO
+     DO I =1 ,K
+        TM(I,I) = BD(I)
+     END DO
+     CALL DAXPY(K,BETA,Y(M,1),M,TM(1,K+1),1)
+     CALL DAXPY(K,BETA,Y(M,1),M,TM(K+1,1),M)
+  END IF
   Q(1:N,J) = P_PLUS(1:N)
   CALL av(N,IAP,JA,A, Q(1:N,J), P)
   ALPHA = DDOT(N,P,1,Q(1:N,J),1)
@@ -85,6 +110,7 @@ SUBROUTINE RESGKL(J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WORK,LWORK)
   CALL DAXPY(N,-TM(J,J),Q(1:N,J),1,P,1)
   BETA=DNRM2(N,P,1)
   TM(J,J+1)=BETA
+  TM(J+1,J)=BETA
   P_PLUS(1:N)=P/BETA
   J=J+1
 

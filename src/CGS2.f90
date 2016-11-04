@@ -4,6 +4,7 @@ SUBROUTINE CGS2(vntemp,V,n,j,WORK)
   DOUBLE PRECISION  ONE, ZERO, MINUSONE
   PARAMETER ( ONE = 1.0D+0, ZERO=0.0D+0,MINUSONE = -1.0D+0 )
   DOUBLE PRECISION V(n,j),vntemp(n),WORK(n)
+  if (j .le. 0) return 
   CALL DGEMV('T',n,j,ONE,V,n,vntemp,1,ZERO,WORK,1)
   CALL DGEMV('N',n,j,MINUSONE,V,n,WORK,1,ONE,vntemp,1)
   CALL DGEMV('T',n,j,ONE,V,n,vntemp,1,ZERO,WORK,1)

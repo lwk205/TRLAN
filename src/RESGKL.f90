@@ -42,9 +42,8 @@ SUBROUTINE RESGKL(J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WORK,LWORK)
      Y(I,I) = ONE
   END DO
 
-     write(*,*) TM 
   IF (SELEK == 2) THEN
-!  write(*,*) "DSYEV ver"
+     !  write(*,*) "DSYEV ver"
      CALL DSYEV("V", "U", M, TM, M, BD, WORK, LWORK, INFO )
      Y=TM
      CALL DGEMM('N','N',N,K,M,ONE,Q,N,Y,M,ZERO,TMP_N_K,N)
@@ -57,44 +56,22 @@ SUBROUTINE RESGKL(J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WORK,LWORK)
   END IF
 
   IF (SELEK == 1) THEN
-!  write(*,*) "katagawrisuta-to ver"
+     !  write(*,*) "katagawrisuta-to ver"
      CALL DCOPY(M*M,TM,1,TMP_M_M,1)
      CALL DSYEV("V", "U", M, TM, M, BE, WORK, LWORK, INFO )
-     Y=TM
-     CALL DGEQRF(M,K,Y,M,BD,WORK,LWORK,INFO)
-     z=y
-     call DORGQR(M,K,K,Y,M,BD,WORK,LWORK,INFO)
-write(*,*) "Y-TM", Y 
-write(*,*) "Y-TM" 
-write(*,*) "Y-TM", TM 
-write(*,*) "Y-TM" 
-     !call DGEMM('N','N',n,k,m,ONE,Q,n,Y,M,ZERO,QQ,n)
-     !q=qq
-     CALL DGEMM('N','N',N,K,M,ONE,Q,N,Y,M,ZERO,TMP_N_K,N)
-     CALL DCOPY(N*K,TMP_N_K,1,Q,1)
-     call DGEMM('N','N',m,k,m,ONE,tmp_m_m,M,Y,M,ZERO,TPP,M)
-!     call DGEMM('T','N',k,k,m,ONE,Y,M,TPP,M,ZERO,TMP_M_M,M)
-     
-     !計算テスト
-     !CALL DORMQR('R','N',N,M,K,Y,M,BD,Q,N,WORK,LWORK,INFO )
-     !CALL DORMQR('R','N',M,M,K,Y,M,BD,TMP_M_M,M,WORK,LWORK,INFO )
-     !CALL DORMQR('L','T',M,K,K,Y,M,BD,TMP_M_M,M,WORK,LWORK,INFO )
-     !TM = ZERO
-     !DO I = 1,K
-     !   !write(*,*) TMP_M_M(1:K,I)
-     !   CALL DCOPY(K,TMP_M_M(1,I),1,TM(1,I),1)
-     !END DO
+     CALL DGEQRF(M,K,TM,M,BD,WORK,LWORK,INFO)
+     BE(1:M) = ZERO
+     BE(M) = ONE
+     CALL DORMQR('R','N',1,M,K,TM,M,BD,BE,1,WORK,LWORK,INFO ) 
+     CALL DORMQR('R','N',N,M,K,TM,M,BD,Q,N,WORK,LWORK,INFO )
+     CALL DORMQR('R','N',M,M,K,TM,M,BD,TMP_M_M,M,WORK,LWORK,INFO )
+     CALL DORMQR('L','T',M,K,K,TM,M,BD,TMP_M_M,M,WORK,LWORK,INFO )
      TM = ZERO
-     DO I =1 ,K
-        write(*,*) "testtt",tpp(1:m,i) - be(i)*Y(1:m,i)
-        write(*,*) TMP_M_M(I,I)
-        TM(I,I) = BE(I)
+     DO I = 1,K
+        CALL DCOPY(K,TMP_M_M(1,I),1,TM(1,I),1)
      END DO
-     !BE(1:M) = ZERO
-     !BE(M) = ONE
-     !CALL DORMQR('R','N',1,M,K,z,M,BD,BE,1,WORK,LWORK,INFO ) 
-     !CALL DAXPY(K,BETA,BE,1,TM(1,K+1),1)
-     CALL DAXPY(K,BETA,Y(M,1),M,TM(1,K+1),1)
+     CALL DAXPY(K,BETA,BE,1,TM(1,K+1),1)
+     CALL DAXPY(K,BETA,BE,1,TM(K+1,1),M)
   END IF
 
   Q(1:N,J) = P_PLUS(1:N)
@@ -104,8 +81,7 @@ write(*,*) "Y-TM"
   IF (SELEK == 2) THEN
     CALL DGEMV('N',N,K,-BETA,Q(1,1),N,Y(M,1),M,ONE,P,1)
   else if (SELEK == 1) THEN
-    CALL DGEMV('N',N,K,-BETA,Q(1,1),N,Y(M,1),M,ONE,P,1)
-    !CALL DGEMV('N',N,K,-BETA,Q(1,1),N,be,1,ONE,P,1)
+    CALL DGEMV('N',N,K,-BETA,Q(1,1),N,BE,1,ONE,P,1)
   end if
   CALL DAXPY(N,-TM(J,J),Q(1:N,J),1,P,1)
   BETA=DNRM2(N,P,1)
@@ -114,7 +90,7 @@ write(*,*) "Y-TM"
   P_PLUS(1:N)=P/BETA
   J=J+1
 
-     write(*,*) TM 
+!     write(*,*) TM 
   RETURN
 END SUBROUTINE RESGKL
 

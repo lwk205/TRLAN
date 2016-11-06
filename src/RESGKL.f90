@@ -74,13 +74,37 @@ SUBROUTINE RESGKL(J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WORK,LWORK)
      CALL DAXPY(K,BETA,BE,1,TM(K+1,1),M)
   END IF
 
+  IF (SELEK == 0) THEN
+     ! 転地合成考慮版？
+     CALL DCOPY(M*M,TM,1,TMP_M_M,1)
+     CALL DSYEV("V", "U", M, TM, M, BE, WORK, LWORK, INFO )
+     CALL DGEQRF(M,K,TM,M,BD,WORK,LWORK,INFO)
+     BE(1:M) = ZERO
+     BE(M) = ONE
+     CALL DORMQR('R','N',1,M,K,TM,M,BD,BE,1,WORK,LWORK,INFO ) 
+     CALL DORMQR('R','N',N,M,K,TM,M,BD,Q,N,WORK,LWORK,INFO )
+     CALL DORMQR('R','N',M,M,K,TM,M,BD,TMP_M_M,M,WORK,LWORK,INFO )
+     CALL DORMQR('L','T',M,K,K,TM,M,BD,TMP_M_M,M,WORK,LWORK,INFO )
+     TM = ZERO
+     DO I = 1,K-1
+        DO INFO = I+1,K
+           TMP_M_M(I,INFO)=(TMP_M_M(INFO,I)+TMP_M_M(I,INFO))/2.0D+0
+        END DO
+     END DO
+     DO I = 1,K
+        CALL DCOPY(K,TMP_M_M(1,I),1,TM(1,I),1)
+     END DO
+     CALL DAXPY(K,BETA,BE,1,TM(1,K+1),1)
+     CALL DAXPY(K,BETA,BE,1,TM(K+1,1),M)
+  END IF
+
   Q(1:N,J) = P_PLUS(1:N)
   CALL av(N,IAP,JA,A, Q(1:N,J), P)
   ALPHA = DDOT(N,P,1,Q(1:N,J),1)
   TM(J,J) = ALPHA
   IF (SELEK == 2) THEN
     CALL DGEMV('N',N,K,-BETA,Q(1,1),N,Y(M,1),M,ONE,P,1)
-  else if (SELEK == 1) THEN
+  else 
     CALL DGEMV('N',N,K,-BETA,Q(1,1),N,BE,1,ONE,P,1)
   end if
   CALL DAXPY(N,-TM(J,J),Q(1:N,J),1,P,1)

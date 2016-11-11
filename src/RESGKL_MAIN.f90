@@ -34,20 +34,21 @@ SUBROUTINE RESGKL_MAIN(MODE,ACCURACY,N,K,M,IAP,JA,A,WORK,LWORK)
         ITR = 0
         I = 1
         VPLUS = INIT_VEC
-        DO WHILE (COU < 10)
+        ! ヒゲの部分の最大の絶対値がリスタートルーチンを呼び出しても更新されないのが100回続いたら停止
+        DO WHILE (COU < 100)
            CALL RESGKL(I,mode,IAP,JA,A,N,M,K,TM,VM,VPLUS,INFO,SELEK,WORK,LWORK)
-           TMP_ERR = MAXVAL(ABS(TM(1:K,K+1)))
+           TMP_ERR = MAXVAL(ABS(TM(1:K,K+1)))!ヒゲの最大絶対値
 
            ITR = ITR+1
            TMPT = omp_get_wtime()
            IF ( (TMP_ERR < MIN_ERR) .OR. (MIN_ERR .EQ. MINUSONE) ) THEN
               MIN_ERR = TMP_ERR
               MINT = TMPT
-              COU = -1
+              COU = -1!更新されたら初期化
            END IF
 
            WRITE(*,*) SELEK,ITR,(TMPT-STARTT),TMP_ERR
-           IF(TMP_ERR .LE. CONST) exit
+           IF(TMP_ERR .LE. CONST) exit!十分小さくなったら抜ける
            COU = COU + 1
         END DO
 

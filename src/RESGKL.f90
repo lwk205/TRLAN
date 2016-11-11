@@ -89,6 +89,7 @@ SUBROUTINE RESGKL(J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WORK,LWORK)
      DO I = 1,K-1
         DO INFO = I+1,K
            TMP_M_M(I,INFO)=(TMP_M_M(INFO,I)+TMP_M_M(I,INFO))/2.0D+0
+           TMP_M_M(INFO,I)=TMP_M_M(I,INFO)
         END DO
      END DO
      DO I = 1,K

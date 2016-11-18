@@ -18,12 +18,19 @@ SUBROUTINE RESGKL(J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WORK,LWORK)
   DO WHILE(J < M+1)
      CALL av(N,IAP,JA,A, Q(1:N,J), P)
      CALL CGS2(P,Q,N,J-1,WORK)  !J=-1のとき,MKLがエラーを吐く
+
      ALPHA = DDOT(N,P,1,Q(1:N,J),1)
      TM(J,J) = ALPHA
+     CALL DAXPY(N,-ALPHA,Q(1:N,J),1,P,1)
+
+     ALPHA = DDOT(N,P,1,Q(1:N,J),1)
+     TM(J,J) = TM(J,J) + ALPHA
+     CALL DAXPY(N,-ALPHA,Q(1:N,J),1,P,1)
+
      !IF (J .NE. 1) THEN
      !   CALL DAXPY(N,-TM(J-1,J),Q(1:N,J-1),1,P,1) 
      !END IF
-     CALL DAXPY(N,-TM(J,J),Q(1:N,J),1,P,1)
+
      BETA=DNRM2(N,P,1)
      IF(J < M) THEN
         TM(J,J+1)=BETA
@@ -190,10 +197,17 @@ SUBROUTINE RESGKL(J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WORK,LWORK)
   !else 
     CALL DGEMV('N',N,K,-BETA,Q(1,1),N,BE,1,ONE,P,1)
   !end if
+
   CALL CGS2(P,Q,N,J-1,WORK)  !J=-1のとき,MKLがエラーを吐く
+
   ALPHA = DDOT(N,P,1,Q(1:N,J),1)
   TM(J,J) = ALPHA
-  CALL DAXPY(N,-TM(J,J),Q(1:N,J),1,P,1)
+  CALL DAXPY(N,-ALPHA,Q(1:N,J),1,P,1)
+
+  ALPHA = DDOT(N,P,1,Q(1:N,J),1)
+  TM(J,J) = TM(J,J) + ALPHA
+  CALL DAXPY(N,-ALPHA,Q(1:N,J),1,P,1)
+
   BETA=DNRM2(N,P,1)
   TM(J,J+1)=BETA
   TM(J+1,J)=BETA

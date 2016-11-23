@@ -8,11 +8,11 @@ SUBROUTINE RESGKL(J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WORK,LWORK)
   INTEGER N,M,K,I,J,INFO,SELEK
   DOUBLE PRECISION ONE,ZERO,TWO,MINUSONE
   PARAMETER(ONE=1.0D+0,ZERO=0.0D+0,TWO=2.0D+0,MINUSONE=-1.0D+0)
-  DOUBLE PRECISION CDUMMY(1,1),ALPHA,BETA
-  DOUBLE PRECISION TM(M,M),TPP(M,M),TMP_M_M(M,M),Q(N,M),QQ(N,M),P_PLUS(N),BD(M),BE(M)
-  DOUBLE PRECISION TMP_N_K(N,K),tmpkk(k,k)
+  DOUBLE PRECISION ALPHA,BETA
+  DOUBLE PRECISION TM(M,M),TMP_M_M(M,M),Q(N,M),P_PLUS(N),BD(M),BE(M)
+  DOUBLE PRECISION TMP_N_K(N,K)
   DOUBLE PRECISION z(m,m),Y(M,M),P(N)
-  DOUBLE PRECISION DDOT,DNRM2,DLAMCH
+  DOUBLE PRECISION DDOT,DNRM2
 
   Q(1:N,J) = P_PLUS(1:N)
   DO WHILE(J < M+1)
@@ -53,49 +53,8 @@ SUBROUTINE RESGKL(J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WORK,LWORK)
      CALL DSYEV("V", "U", M, TM, M, BD, WORK, LWORK, INFO ) !LWORK >= max(1,3*M-1).
      Y=TM
      
-     !CALL DGEMM('T','N',m,m,n,ONE,Q,n,Q,n,ZERO,TMP_m_m,m)
-     !do i=1,m
-     !  tmp_m_m(i,i)=tmp_m_m(i,i)-1.0
-     !end do
-     !!write(*,*) maxval(abs(tmp_m_m(1:m,1:m)))
-     !alpha = abs(tmp_m_m(1,1))
-     !do i=1,m
-     !  do info = 1,m
-     !    alpha = max(alpha,abs(tmp_m_m(i,info)))
-     !  end do
-     !end do
-     !!write(*,*) alpha
-
-     !CALL DGEMM('T','N',k,k,n,ONE,Q,n,Q,n,ZERO,TMPkk,k)
-     !do i=1,k
-     !  tmpkk(i,i)=tmpkk(i,i)-1.0
-     !end do
-     !!write(*,*) maxval(abs(tmpkk(1:k,1:k)))
-
-     !alpha = abs(tmpkk(1,1))
-     !do i=1,k
-     !  do info = 1,k
-     !    alpha = max(alpha,abs(tmpkk(i,info)))
-     !  end do
-     !end do
-     !!write(*,*) alpha
-
-     !CALL DGEMM('N','N',N,K,M,ONE,Q,N,Y,M,ZERO,TMP_N_K,N)
-     tmp_n_k = matmul(Q(1:n,1:m),Y(1:m,1:k))
+     CALL DGEMM('N','N',N,K,M,ONE,Q,N,Y,M,ZERO,TMP_N_K,N)
      CALL DCOPY(N*K,TMP_N_K,1,Q,1)
-
-     !CALL DGEMM('T','N',k,k,n,ONE,Q,n,Q,n,ZERO,TMPkk,k)
-     !do i=1,k
-     !  tmpkk(i,i)=tmpkk(i,i)-1.0
-     !end do
-     !!write(*,*) maxval(abs(tmpkk(1:k,1:k)))
-
-     !CALL DGEMM('T','N',m,m,m,ONE,tm,m,tm,m,ZERO,TMP_m_m,m)
-     !do i=1,m
-     !  tmp_m_m(i,i)=tmp_m_m(i,i)-1.0
-     !end do
-     !!write(*,*) maxval(abs(tmp_m_m(1:m,1:m)))
-
      TM = ZERO
      DO I =1 ,K
         TM(I,I) = BD(I)
@@ -153,7 +112,7 @@ SUBROUTINE RESGKL(J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WORK,LWORK)
   
   IF (SELEK == -1) THEN
      !  write(*,*) "test hybrid ver"
-     if (MAXVAL(ABS(TM(1:K,K+1))) .ge. 10.0**-14) then 
+     if (MAXVAL(ABS(TM(1:K,K+1))) .ge. 10.0**(-14)) then 
      !if (mod(J,2) == 0) then 
        CALL DSYEV("V", "U", M, TM, M, BD, WORK, LWORK, INFO ) !LWORK >= max(1,3*M-1).
        Y=TM

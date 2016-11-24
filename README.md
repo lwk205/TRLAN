@@ -1,8 +1,8 @@
 # TRLAN
 
-tssrun ./fileinput_gkl 10 s 100 smi
+tssrun ./fileinput_l 10 s 100 smi
 
-tssrun numactl -i all ./fileinput_gkl 10 s 100 smi
+tssrun numactl -i all ./fileinput_l 10 s 100 smi
 
 symm 10 4
 

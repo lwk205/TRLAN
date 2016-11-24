@@ -14,22 +14,22 @@ module switch intel/15.0.6 intel/16.0.2
 ulimit -s unlimited
 export OMP_STACKSIZE=10G
 
-aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_gkl 10 s 100 smi > 10_smi
-aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_gkl 15 s 100 smi > 15_smi
-aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_gkl 20 s 100 smi > 20_smi
-aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_gkl 25 s 100 smi > 25_smi
-aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_gkl 30 s 100 smi > 30_smi
-aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_gkl 35 s 100 smi > 35_smi
-aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_gkl 10 s 100 smi2 > 10_smi2
-aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_gkl 15 s 100 smi2 > 15_smi2
-aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_gkl 20 s 100 smi2 > 20_smi2
-aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_gkl 25 s 100 smi2 > 25_smi2
-aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_gkl 30 s 100 smi2 > 30_smi2
-aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_gkl 35 s 100 smi2 > 35_smi2
-aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_gkl 10 s 100 smi3 > 10_smi3
-aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_gkl 15 s 100 smi3 > 15_smi3
-aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_gkl 20 s 100 smi3 > 20_smi3
-aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_gkl 25 s 100 smi3 > 25_smi3
-aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_gkl 30 s 100 smi3 > 30_smi3
-aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_gkl 35 s 100 smi3 > 35_smi3
+aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_l 10 s 100 smi > 10_smi
+aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_l 15 s 100 smi > 15_smi
+aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_l 20 s 100 smi > 20_smi
+aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_l 25 s 100 smi > 25_smi
+aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_l 30 s 100 smi > 30_smi
+aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_l 35 s 100 smi > 35_smi
+aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_l 10 s 100 smi2 > 10_smi2
+aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_l 15 s 100 smi2 > 15_smi2
+aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_l 20 s 100 smi2 > 20_smi2
+aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_l 25 s 100 smi2 > 25_smi2
+aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_l 30 s 100 smi2 > 30_smi2
+aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_l 35 s 100 smi2 > 35_smi2
+aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_l 10 s 100 smi3 > 10_smi3
+aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_l 15 s 100 smi3 > 15_smi3
+aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_l 20 s 100 smi3 > 20_smi3
+aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_l 25 s 100 smi3 > 25_smi3
+aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_l 30 s 100 smi3 > 30_smi3
+aprun -n $LSB_PROCS -d $LSB_CPUS -N $LSB_PPN numactl -i all ./fileinput_l 35 s 100 smi3 > 35_smi3
 

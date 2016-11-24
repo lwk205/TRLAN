@@ -1,0 +1,19 @@
+LIB2= -Wl,--start-group /opt/intel/mkl/lib/intel64/libmkl_intel_lp64.a /opt/intel/mkl/lib/intel64/libmkl_core.a /opt/intel/mkl/lib/intel64/libmkl_gnu_thread.a -Wl,--end-group -lpthread -lm -ldl -lgfortran
+
+all: clean CGS2.o DGEBRDG_4_TRISIDE.o ERR.o RESL.o dfma0.o RESL_MAIN.o fileinput_l
+
+%.o: src/%.f90
+	/home/a/a0082042/GCC_610/bin/gfortran -Wall -mcmodel=medium -fopenmp -O3 -mtune=haswell -march=haswell -c -o src/$@ $<
+
+%.o: lib/%.f
+	/home/a/a0082042/GCC_610/bin/gfortran -fopenmp -mcmodel=medium -O3 -mtune=haswell -march=haswell -c -o lib/$@ $<
+
+dfma0.o:
+	/home/a/a0082042/GCC_610/bin/gcc -O3 -fopenmp -mtune=haswell -march=haswell -mcmodel=medium -c -o lib/dfma0.o lib/dfma0.c
+
+fileinput_l:
+	/home/a/a0082042/GCC_610/bin/gcc -O3 -fopenmp -mtune=haswell -march=haswell -mcmodel=medium -std=c99 -o fileinput_l fileinput_l.c src/CGS2.o src/DGEBRDG_4_TRISIDE.o src/ERR.o src/RESL.o lib/dfma0.o src/RESL_MAIN.o ${LIB2}
+
+clean:
+	rm -rf lib/*.o src/*.o fileinput_l
+

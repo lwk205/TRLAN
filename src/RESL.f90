@@ -1,6 +1,7 @@
-SUBROUTINE RESL(which,J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WORK,LWORK)
+SUBROUTINE RESL(start_row,which,J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WORK,LWORK)
   IMPLICIT NONE
 
+  INTEGER start_row(*)
   INTEGER IAP(*), JA(*), LWORK, which
   DOUBLE PRECISION A(*), WORK(*)
   CHARACTER MODE
@@ -16,7 +17,7 @@ SUBROUTINE RESL(which,J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WORK,LWORK)
 
   Q(1:N,J) = P_PLUS(1:N)
   DO WHILE(J < M+1)
-     CALL av(N,IAP,JA,A, Q(1:N,J), P)
+     CALL av(start_row,N,IAP,JA,A, Q(1:N,J), P)
      CALL CGS2(P,Q,N,J-1,WORK)  !J=-1のとき,MKLがエラーを吐く
 
      ALPHA = DDOT(N,P,1,Q(1:N,J),1)
@@ -204,7 +205,7 @@ SUBROUTINE RESL(which,J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WORK,LWORK)
   END IF
 
   Q(1:N,J) = P_PLUS(1:N)
-  CALL av(N,IAP,JA,A, Q(1:N,J), P)
+  CALL av(start_row,N,IAP,JA,A, Q(1:N,J), P)
   !IF (SELEK == 2) THEN
   !  CALL DGEMV('N',N,K,-BETA,Q(1,1),N,Y(M,1),M,ONE,P,1)
   !else 
@@ -231,51 +232,26 @@ SUBROUTINE RESL(which,J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WORK,LWORK)
   RETURN
 END SUBROUTINE RESL
 
-subroutine av (M, IAP, JA ,A, P, AP)
+subroutine av (start_row,M, IAP, JA ,A, P, AP)
       
   IMPLICIT NONE
   include 'omp_lib.h'
-  integer M
+  integer M,thr_num
+  INTEGER start_row(*)
   integer IAP(*),JA(*)
   double precision A(*),P(*),AP(*),zero
   parameter (zero=0.0d0)
   integer i,j
   
-  !$OMP PARALLEL DO PRIVATE(j)
-  do i=1,M
+  !$OMP PARALLEL PRIVATE(i,thr_num,j)
+  thr_num = omp_get_thread_num()
+  do i=start_row(thr_num+1)+1,start_row(thr_num+2)
      AP(i)=zero
      do j=IAP(i),IAP(i+1)-1
         AP(i)=AP(i)+(A(j))*P(JA(j))
      enddo
   enddo
-  !$OMP END PARALLEL DO
+  !$OMP END PARALLEL
   
   return
 end subroutine av
-
-subroutine atv (M, N, IAP, JA, A, Q, AQ)
-  
-  IMPLICIT NONE
-  include 'omp_lib.h'
-  integer M,N
-  integer IAP(*),JA(*)
-  double precision A(*),Q(*),AQ(N),zero
-  parameter (zero=0.0d0)
-  
-  integer i,j
-  
-  do i=1,N
-     AQ(i)=zero
-  enddo
-  
-  !$OMP PARALLEL DO PRIVATE(j) REDUCTION(+:AQ)
-  do i=1,M
-     do j=IAP(i),IAP(i+1)-1
-        AQ(JA(j))=AQ(JA(j))+(A(j))*Q(i)
-     enddo
-  enddo
-  !$OMP END PARALLEL DO
-  
-  return
-end subroutine atv
-

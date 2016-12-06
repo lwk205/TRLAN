@@ -11,13 +11,13 @@
 int main(int argc, char *argv[]){
 
   int i, ii, j, m, n, w, L ,K, accuracy, lwork;
-  double alpha;
+  int maxthreads,k0,k1,t;
+  double alpha,n0,l0,l1;
   char mode;
-  int *IAP,*JA;
+  int *IAP,*JA,*start_row;
   double *A,*work;
   int which;
   FILE *fp;
-  
   which = atoi(argv[1]);
   // 1 == 絶対値最大からK
   // 2 == 絶対値最小からK
@@ -47,12 +47,20 @@ int main(int argc, char *argv[]){
   if (n>lwork) lwork=n;
 
   work=(double *)malloc(sizeof(double)*lwork);
+  
+  maxthreads=omp_get_max_threads();
+  start_row=(int *)malloc((maxthreads+1)*sizeof(int));
 
-  if(IAP==NULL || JA==NULL || A==NULL || work==NULL){
+  if(IAP==NULL || JA==NULL || A==NULL || work==NULL || start_row==NULL){
     printf("Out of memory.\n");
     return 0;
   }
   
+  n0 = (double)w/maxthreads;
+  printf("w  = %d\n",w);
+  printf("maxthreads  = %d\n",maxthreads);
+  printf("n0 = %f\n",n0);
+
   if(mode=='s'){
     ii=0;
     w=0;
@@ -76,7 +84,40 @@ int main(int argc, char *argv[]){
     }
   }
   fclose(fp);
-  resl_main_(&which,&mode,&accuracy,&n,&L,&K,IAP,JA,A,work,&lwork);
+
+
+  for(t=0,i=0;i<maxthreads && t<m;i++){
+    start_row[i]=t;
+
+    k1=0;
+    while(k1<n0 && t<m){
+      k0=k1;
+      k1=k0+IAP[t+1]-IAP[t];
+      t=t+1;
+    }
+
+    if(start_row[i]+1==t){
+      continue;
+    }
+
+    l0=n0-k0;
+    l1=fabs(k1-n0);
+    if(l0<l1){
+      t=t-1;
+    }
+  }
+  start_row[i]=m;
+
+  if(i!=maxthreads){
+    for(i=i+1;i<maxthreads+1;i++){
+      start_row[i]=0;
+    }
+  }
+  for(i = 0;i<maxthreads+1;i++){
+  printf("start_row %d = %d\n",i,start_row[i]);
+  }
+
+  resl_main_(start_row,&which,&mode,&accuracy,&m,&L,&K,IAP,JA,A,work,&lwork);
 
   return 0;
 }

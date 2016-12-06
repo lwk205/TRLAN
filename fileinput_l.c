@@ -15,12 +15,18 @@ int main(int argc, char *argv[]){
   char mode;
   int *IAP,*JA;
   double *A,*work;
-
+  int which;
   FILE *fp;
-  L=atoi(argv[1]);
-  accuracy = atoi(argv[3]);
-  mode = argv[2][0];
-  fp = fopen(argv[4],"r");
+  
+  which = atoi(argv[1]);
+  // 1 == 絶対値最大からK
+  // 2 == 絶対値最小からK
+  // 3 == 値最大からK
+  // 4 == 値小最からK
+  L=atoi(argv[2]);
+  mode = argv[3][0];
+  accuracy = atoi(argv[4]);
+  fp = fopen(argv[5],"r");
   if(mode=='d') printf("runnning: dense mode\n");
   else if(mode=='s') printf("runnning: sparse mode\n");
   else {printf("error: d[dense] か s[sparse] を指定して下さい。"); return 0;}
@@ -70,7 +76,7 @@ int main(int argc, char *argv[]){
     }
   }
   fclose(fp);
-  resl_main_(&mode,&accuracy,&n,&L,&K,IAP,JA,A,work,&lwork);
+  resl_main_(&which,&mode,&accuracy,&n,&L,&K,IAP,JA,A,work,&lwork);
 
   return 0;
 }

@@ -6,6 +6,7 @@
 *.csv
 *~
 fileinput_gkl
+fileinput_l
 sparse_nonsymm
 dense_nonsymm
 power

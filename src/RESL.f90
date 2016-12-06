@@ -1,17 +1,17 @@
-SUBROUTINE RESL(J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WORK,LWORK)
+SUBROUTINE RESL(which,J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WORK,LWORK)
   IMPLICIT NONE
 
-  INTEGER IAP(*), JA(*), LWORK
+  INTEGER IAP(*), JA(*), LWORK, which
   DOUBLE PRECISION A(*), WORK(*)
   CHARACTER MODE
 
-  INTEGER N,M,K,I,J,INFO,SELEK
-  DOUBLE PRECISION ONE,ZERO,TWO,MINUSONE
+  INTEGER N,M,K,I,JJ,J,INFO,SELEK,II,Z
+  DOUBLE PRECISION ONE,ZERO,TWO,MINUSONE,PP,PQ
   PARAMETER(ONE=1.0D+0,ZERO=0.0D+0,TWO=2.0D+0,MINUSONE=-1.0D+0)
   DOUBLE PRECISION ALPHA,BETA
   DOUBLE PRECISION TM(M,M),TMP_M_M(M,M),Q(N,M),P_PLUS(N),BD(M),BE(M)
   DOUBLE PRECISION TMP_N_K(N,K)
-  DOUBLE PRECISION z(m,m),Y(M,M),P(N)
+  DOUBLE PRECISION Y(M,M),P(N)
   DOUBLE PRECISION DDOT,DNRM2
 
   Q(1:N,J) = P_PLUS(1:N)
@@ -51,8 +51,62 @@ SUBROUTINE RESL(J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WORK,LWORK)
   IF (SELEK == 2) THEN
      !  write(*,*) "DSYEV ver"
      CALL DSYEV("V", "U", M, TM, M, BD, WORK, LWORK, INFO ) !LWORK >= max(1,3*M-1).
+     if (which == 1) then
+         DO II = 2, M
+            I = II - 1
+            Z = I
+            PP= abs(BD( I ))
+            DO JJ = II, M
+               IF(abs( BD( JJ )).GT.PP) THEN
+                  Z = JJ
+                  PP= abs(BD( JJ ))
+               END IF
+            END DO
+            IF( Z.NE.I ) THEN
+               PQ=BD(Z)
+               BD( Z ) = BD( I )
+               BD( I ) = PQ
+               CALL DSWAP( M, TM( 1, I ), 1, TM( 1, Z ), 1 )
+            END IF
+         END DO
+     else if (which == 2) then
+         DO II = 2, M
+            I = II - 1
+            Z = I
+            PP= abs(BD( I ))
+            DO JJ = II, M
+               IF(abs( BD( JJ )).LT.PP) THEN
+                  Z = JJ
+                  PP= abs(BD( JJ ))
+               END IF
+            END DO
+            IF( Z.NE.I ) THEN
+               PQ=BD(Z)
+               BD( Z ) = BD( I )
+               BD( I ) = PQ
+               CALL DSWAP( M, TM( 1, I ), 1, TM( 1, Z ), 1 )
+            END IF
+         END DO
+     else if (which == 3) then
+         DO II = 2, M
+            I = II - 1
+            Z = I
+            PP= BD( I )
+            DO JJ = II, M
+               IF( BD( JJ ).GT.PP) THEN
+                  Z = JJ
+                  PP= BD( JJ )
+               END IF
+            END DO
+            IF( Z.NE.I ) THEN
+               PQ=BD(Z)
+               BD( Z ) = BD( I )
+               BD( I ) = PQ
+               CALL DSWAP( M, TM( 1, I ), 1, TM( 1, Z ), 1 )
+            END IF
+         END DO
+     end if 
      Y=TM
-     
      CALL DGEMM('N','N',N,K,M,ONE,Q,N,Y,M,ZERO,TMP_N_K,N)
      CALL DCOPY(N*K,TMP_N_K,1,Q,1)
      TM = ZERO

@@ -22,7 +22,7 @@ int main(int argc, char *argv[]){
   // 1 == 絶対値最大からK
   // 2 == 絶対値最小からK
   // 3 == 値最大からK
-  // 4 == 値小最からK
+  // 4 == 値最小からK
   L=atoi(argv[2]);
   mode = argv[3][0];
   accuracy = atoi(argv[4]);

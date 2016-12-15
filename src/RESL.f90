@@ -52,6 +52,7 @@ SUBROUTINE RESL(start_row,which,J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WOR
   IF (SELEK == 2) THEN
      !  write(*,*) "DSYEV ver"
      CALL DSYEV("V", "U", M, TM, M, BD, WORK, LWORK, INFO ) !LWORK >= max(1,3*M-1).
+!     print *,BD(96),BD(97),BD(98),BD(99),BD(100),BD(101),BD(102)
      if (which == 1) then
          DO II = 2, M
             I = II - 1
@@ -115,7 +116,6 @@ SUBROUTINE RESL(start_row,which,J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WOR
         TM(I,I) = BD(I)
      END DO
      CALL DAXPY(K,BETA,Y(M,1),M,TM(1,K+1),1)
-     CALL DCOPY(K,Y(M,1),M,BE,1)
   END IF
 
   IF (SELEK == 1) THEN
@@ -206,12 +206,6 @@ SUBROUTINE RESL(start_row,which,J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WOR
 
   Q(1:N,J) = P_PLUS(1:N)
   CALL av(start_row,N,IAP,JA,A, Q(1:N,J), P)
-  !IF (SELEK == 2) THEN
-  !  CALL DGEMV('N',N,K,-BETA,Q(1,1),N,Y(M,1),M,ONE,P,1)
-  !else 
-    CALL DGEMV('N',N,K,-BETA,Q(1,1),N,BE,1,ONE,P,1)
-  !end if
-
   CALL CGS2(P,Q,N,J-1,WORK)  !J=-1のとき,MKLがエラーを吐く
 
   ALPHA = DDOT(N,P,1,Q(1:N,J),1)
@@ -228,7 +222,6 @@ SUBROUTINE RESL(start_row,which,J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WOR
   P_PLUS(1:N)=P/BETA
   J=J+1
 
-!     write(*,*) TM 
   RETURN
 END SUBROUTINE RESL
 

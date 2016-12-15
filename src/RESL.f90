@@ -18,21 +18,23 @@ SUBROUTINE RESL(start_row,which,J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WOR
   Q(1:N,J) = P_PLUS(1:N)
   DO WHILE(J < M+1)
      CALL av(start_row,N,IAP,JA,A, Q(1:N,J), P)
-     CALL CGS2(P,Q,N,J-1,WORK)  !J=-1のとき,MKLがエラーを吐く
 
      ALPHA = DDOT(N,P,1,Q(1:N,J),1)
      TM(J,J) = ALPHA
      CALL DAXPY(N,-ALPHA,Q(1:N,J),1,P,1)
 
+     CALL CGS2(P,Q,N,J-1,WORK)  !J=-1のとき,MKLがエラーを吐く
+
      ALPHA = DDOT(N,P,1,Q(1:N,J),1)
-     TM(J,J) = TM(J,J) + ALPHA
+     TM(J,J) = TM(J,J)+ALPHA
      CALL DAXPY(N,-ALPHA,Q(1:N,J),1,P,1)
+
+     BETA=DNRM2(N,P,1)
 
      !IF (J .NE. 1) THEN
      !   CALL DAXPY(N,-TM(J-1,J),Q(1:N,J-1),1,P,1) 
      !END IF
 
-     BETA=DNRM2(N,P,1)
      IF(J < M) THEN
         TM(J,J+1)=BETA
         TM(J+1,J)=BETA
@@ -112,10 +114,13 @@ SUBROUTINE RESL(start_row,which,J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WOR
      CALL DGEMM('N','N',N,K,M,ONE,Q,N,Y,M,ZERO,TMP_N_K,N)
      CALL DCOPY(N*K,TMP_N_K,1,Q,1)
      TM = ZERO
+     DO I =1 ,M
+        write(*,*)  I, BD(I)
+     END DO
      DO I =1 ,K
         TM(I,I) = BD(I)
      END DO
-     CALL DAXPY(K,BETA,Y(M,1),M,TM(1,K+1),1)
+!     CALL DAXPY(K,BETA,Y(M,1),M,TM(1,K+1),1)
   END IF
 
   IF (SELEK == 1) THEN
@@ -206,17 +211,19 @@ SUBROUTINE RESL(start_row,which,J,MODE,IAP,JA,A,N,M,K,TM,Q,P_PLUS,INFO,SELEK,WOR
 
   Q(1:N,J) = P_PLUS(1:N)
   CALL av(start_row,N,IAP,JA,A, Q(1:N,J), P)
-  CALL CGS2(P,Q,N,J-1,WORK)  !J=-1のとき,MKLがエラーを吐く
 
   ALPHA = DDOT(N,P,1,Q(1:N,J),1)
   TM(J,J) = ALPHA
   CALL DAXPY(N,-ALPHA,Q(1:N,J),1,P,1)
 
+  CALL CGS20(P,Q,N,J-1,WORK,TM(1,K+1))  !J=-1のとき,MKLがエラーを吐く
+
   ALPHA = DDOT(N,P,1,Q(1:N,J),1)
-  TM(J,J) = TM(J,J) + ALPHA
+  TM(J,J) = TM(J,J)+ALPHA
   CALL DAXPY(N,-ALPHA,Q(1:N,J),1,P,1)
 
   BETA=DNRM2(N,P,1)
+
   TM(J,J+1)=BETA
   TM(J+1,J)=BETA
   P_PLUS(1:N)=P/BETA

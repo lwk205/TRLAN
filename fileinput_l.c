@@ -57,9 +57,6 @@ int main(int argc, char *argv[]){
   }
   
   n0 = (double)w/maxthreads;
-  printf("w  = %d\n",w);
-  printf("maxthreads  = %d\n",maxthreads);
-  printf("n0 = %f\n",n0);
 
   if(mode=='s'){
     ii=0;
